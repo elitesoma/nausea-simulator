@@ -1,37 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Hoodie's Dungeon - Night 1</title>
-  <style>
-    html, body {
-      margin: 0;
-      background: black;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      margin: 0 auto;
-      background: #000;
-    }
-    #ui {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-family: monospace;
-      color: white;
-      font-size: 1.5rem;
-      z-index: 100;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hoodie's Clicker</title>
+<style>
+  body {
+    background: #121212;
+    color: #eee;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+    user-select: none;
+  }
+  h1 {
+    margin-bottom: 10px;
+  }
+  #score {
+    font-size: 2.5rem;
+    margin: 20px 0;
+  }
+  #clicker-btn {
+    background: #ff5722;
+    border: none;
+    border-radius: 12px;
+    width: 200px;
+    height: 200px;
+    font-size: 2.5rem;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(255,87,34,0.7);
+    transition: transform 0.1s ease;
+  }
+  #clicker-btn:active {
+    transform: scale(0.9);
+  }
+  #upgrades {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .upgrade {
+    background: #222;
+    border-radius: 10px;
+    width: 140px;
+    padding: 15px;
+    cursor: pointer;
+    box-shadow: 0 0 8px #ff5722;
+    transition: background-color 0.3s ease;
+  }
+  .upgrade:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+  }
+  .upgrade h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+  }
+  .upgrade p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+  }
+</style>
 </head>
 <body>
-  <div id="ui">
-    Time: <span id="clock">12:00 AM</span><br>
-    Power: <span id="power">100%</span>
-  </div>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-  <script src="game.js"></script>
+<h1>Hoodie's Dungeon Clicker</h1>
+<div id="score">0</div>
+<button id="clicker-btn">Click Me!</button>
+
+<div id="upgrades">
+  <!-- Upgrade buttons inserted here by JS -->
+</div>
+
+<script>
+  // Game state
+  let score = 0;
+  let pointsPerClick = 1;
+  let pointsPerSecond = 0;
+
+  // Upgrade data (add your own titles & images later)
+  const upgrades = [
+    {
+      id: 'upgrade1',
+      name: 'Upgrade 1',
+      description: 'Increase points per click by 1',
+      cost: 10,
+      quantity: 0,
+      effect: () => { pointsPerClick += 1; },
+    },
+    {
+      id: 'upgrade2',
+      name: 'Upgrade 2',
+      description: 'Increase points per click by 5',
+      cost: 100,
+      quantity: 0,
+      effect: () => { pointsPerClick += 5; },
+    },
+    {
+      id: 'auto1',
+      name: 'Auto Clicker',
+      description: 'Earn 1 point per second automatically',
+      cost: 50,
+      quantity: 0,
+      effect: () => { pointsPerSecond += 1; },
+    },
+    {
+      id: 'auto2',
+      name: 'Super Auto Clicker',
+      description: 'Earn 5 points per second automatically',
+      cost: 500,
+      quantity: 0,
+      effect: () => { pointsPerSecond += 5; },
+    }
+  ];
+
+  const scoreEl = document.getElementById('score');
+  const clickerBtn = document.getElementById('clicker-btn');
+  const upgradesDiv = document.getElementById('upgrades');
+
+  // Load saved data
+  function loadGame() {
+    const saved = localStorage.getItem('clickerGame');
+    if (saved) {
+      const data = JSON.parse(saved);
+      score = data.score || 0;
+      pointsPerClick = data.pointsPerClick || 1;
+      pointsPerSecond = data.pointsPerSecond || 0;
+      upgrades.forEach(u => {
+        const savedUpgrade = data.upgrades.find(su => su.id === u.id);
+        if (savedUpgrade) {
+          u.quantity = savedUpgrade.quantity;
+        }
+      });
+    }
+  }
+
+  // Save game state
+  function saveGame() {
+    const data = {
+      score,
+      pointsPerClick,
+      pointsPerSecond,
+      upgrades: upgrades.map(u => ({ id: u.id, quantity: u.quantity }))
+    };
+    localStorage.setItem('clickerGame', JSON.stringify(data));
+  }
+
+  // Update score display
+  function updateScore() {
+    scoreEl.textContent = score.toLocaleString();
+  }
+
+  // Create upgrade buttons
+  function createUpgradeButtons() {
+    upgradesDiv.innerHTML = '';
+    upgrades.forEach(upgrade => {
+      const btn = document.createElement('button');
+      btn.className = 'upgrade';
+      btn.id = upgrade.id;
+      btn.title = upgrade.description;
+      btn.innerHTML = `
+        <h3>${upgrade.name}</h3>
+        <p>Cost: <span class="cost">${upgrade.cost.toLocaleString()}</span></p>
+        <p>Owned: <span class="quantity">${upgrade.quantity}</span></p>
+      `;
+      btn.onclick = () => buyUpgrade(upgrade);
+      upgradesDiv.appendChild(btn);
+    });
+  }
+
+  // Update upgrade buttons (cost, disabled state, quantity)
+  function updateUpgradesUI() {
+    upgrades.forEach(upgrade => {
+      const btn = document.getElementById(upgrade.id);
+      if (!btn) return;
+      btn.querySelector('.cost').textContent = upgrade.cost.toLocaleString();
+      btn.querySelector('.quantity').textContent = upgrade.quantity;
+      btn.disabled = score < upgrade.cost;
+    });
+  }
+
+  // Buy an upgrade
+  function buyUpgrade(upgrade) {
+    if (score >= upgrade.cost) {
+      score -= upgrade.cost;
+      upgrade.quantity += 1;
+      upgrade.effect();
+      // Increase cost for next purchase (simple exponential growth)
+      upgrade.cost = Math.floor(upgrade.cost * 1.5);
+      updateScore();
+      updateUpgradesUI();
+      saveGame();
+    }
+  }
+
+  // Handle click button press
+  clickerBtn.addEventListener('click', () => {
+    score += pointsPerClick;
+    updateScore();
+    updateUpgradesUI();
+    saveGame();
+  });
+
+  // Passive points per second
+  setInterval(() => {
+    if (pointsPerSecond > 0) {
+      score += pointsPerSecond;
+      updateScore();
+      updateUpgradesUI();
+      saveGame();
+    }
+  }, 1000);
+
+  // Init game
+  loadGame();
+  updateScore();
+  createUpgradeButtons();
+  updateUpgradesUI();
+</script>
+
 </body>
 </html>
