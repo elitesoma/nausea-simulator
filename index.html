@@ -2,137 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>THE STATIC</title>
+  <title>Hoodie's Dungeon - Night 1</title>
   <style>
     html, body {
       margin: 0;
-      padding: 0;
       background: black;
       overflow: hidden;
     }
     canvas {
       display: block;
-      background: black;
+      margin: 0 auto;
+      background: #000;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: monospace;
+      color: white;
+      font-size: 1.5rem;
+      z-index: 100;
     }
   </style>
 </head>
 <body>
-<canvas id="gameCanvas"></canvas>
-<script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  <div id="ui">
+    Time: <span id="clock">12:00 AM</span><br>
+    Power: <span id="power">100%</span>
+  </div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-  const keys = {};
-  window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-  window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-  const player = {
-    x: 100,
-    y: 100,
-    size: 20,
-    speed: 2
-  };
-
-  const entity = {
-    x: 300,
-    y: 300,
-    size: 20,
-    seen: false
-  };
-
-  const walls = [
-    {x: 200, y: 200, w: 300, h: 20},
-    {x: 600, y: 100, w: 20, h: 300},
-    {x: 100, y: 400, w: 500, h: 20}
-  ];
-
-  function movePlayer() {
-    let dx = 0, dy = 0;
-    if (keys.w) dy = -1;
-    if (keys.s) dy = 1;
-    if (keys.a) dx = -1;
-    if (keys.d) dx = 1;
-
-    player.x += dx * player.speed;
-    player.y += dy * player.speed;
-  }
-
-  function drawWalls() {
-    ctx.fillStyle = '#222';
-    walls.forEach(w => {
-      ctx.fillRect(w.x, w.y, w.w, w.h);
-    });
-  }
-
-  function isInView(x1, y1, x2, y2, radius = 150) {
-    const dist = Math.hypot(x1 - x2, y1 - y2);
-    return dist < radius;
-  }
-
-  function drawPlayer() {
-    ctx.fillStyle = 'white';
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawEntity() {
-    const visible = isInView(player.x, player.y, entity.x, entity.y, 180);
-    entity.seen = visible;
-
-    if (!visible) {
-      const dx = player.x - entity.x;
-      const dy = player.y - entity.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > 50) {
-        entity.x += dx / dist * 0.5;
-        entity.y += dy / dist * 0.5;
-      }
-    }
-
-    ctx.fillStyle = visible ? 'transparent' : 'red';
-    ctx.beginPath();
-    ctx.arc(entity.x, entity.y, entity.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawFlashlight() {
-    const gradient = ctx.createRadialGradient(
-      player.x, player.y, 20,
-      player.x, player.y, 180
-    );
-    gradient.addColorStop(0, 'rgba(255,255,255,0.6)');
-    gradient.addColorStop(1, 'rgba(0,0,0,1)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
-  function drawStatic() {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const rand = Math.random() * 30;
-      imageData.data[i] += rand;
-      imageData.data[i + 1] += rand;
-      imageData.data[i + 2] += rand;
-    }
-    ctx.putImageData(imageData, 0, 0);
-  }
-
-  function loop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    movePlayer();
-    drawWalls();
-    drawPlayer();
-    drawEntity();
-    drawFlashlight();
-    drawStatic();
-
-    requestAnimationFrame(loop);
-  }
-
-  loop();
-</script>
+  <script src="game.js"></script>
 </body>
 </html>
