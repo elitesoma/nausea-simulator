@@ -23,30 +23,25 @@
       overflow: hidden;
       animation: fadeIn 2s ease-in;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-
     h1 {
       font-size: 5rem;
       color: #ff004c;
       animation: glow 2s infinite alternate;
     }
-
     @keyframes glow {
       from { text-shadow: 0 0 10px #ff004c; }
       to { text-shadow: 0 0 20px #ff004c, 0 0 30px #ff004c; }
     }
-
     p {
       font-size: 1.2rem;
       max-width: 600px;
       margin-top: 1rem;
       color: #ddd;
     }
-
     .console {
       background-color: #111;
       border: 2px solid #00ffe0;
@@ -58,39 +53,10 @@
       box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
       animation: fadeInConsole 1.5s ease-out;
     }
-
     @keyframes fadeInConsole {
       from { transform: translateY(30px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
-
-    .input-line {
-      display: flex;
-      margin-top: 1.5rem;
-    }
-
-    .input-line span {
-      color: #00ffe0;
-      margin-right: 0.5rem;
-      font-weight: bold;
-    }
-
-    input {
-      flex-grow: 1;
-      background-color: transparent;
-      color: #00ffe0;
-      border: none;
-      border-bottom: 2px solid #00ffe0;
-      font-size: 1.1rem;
-      outline: none;
-      caret-color: #00ffe0;
-      transition: all 0.3s ease;
-    }
-
-    input:focus {
-      border-color: #ff004c;
-    }
-
     #output {
       margin-top: 1rem;
       text-align: left;
@@ -103,28 +69,52 @@
       color: #00ffee;
       animation: fadeIn 1.2s ease-in-out;
     }
-
-    .hidden {
-      display: none;
+    .buttons {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .btn {
+      background-color: #00ffe0;
+      color: #111;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: 'Orbitron', sans-serif;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .btn:hover {
+      background-color: #00cccc;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
   <h1>404</h1>
   <p>You've entered the void. There's a way out... if you can find it.</p>
-
   <div class="console">
     <div id="output"></div>
-    <div class="input-line">
-      <span>&gt;</span>
-      <input id="userInput" type="text" autocomplete="off" autofocus />
+    <div class="buttons">
+      <button class="btn" onclick="runCommand('look')">Look</button>
+      <button class="btn" onclick="runCommand('inspect')">Inspect</button>
+      <button class="btn" onclick="runCommand('enter')">Enter</button>
+      <button class="btn" onclick="runCommand('inventory')">Inventory</button>
+      <button class="btn" onclick="runCommand('pickup map')">Pick up Map</button>
+      <button class="btn" onclick="runCommand('use map')">Use Map</button>
+      <button class="btn" onclick="runCommand('solve 52')">Solve</button>
+      <button class="btn" onclick="runCommand('clear')">Clear</button>
+    </div>
+    <div class="buttons">
+      <button class="btn" onclick="runCommand('password open-sesame')">Password</button>
+      <button class="btn" onclick="runCommand('code 9271')">Code</button>
     </div>
   </div>
-
   <script>
     const output = document.getElementById('output');
-    const input = document.getElementById('userInput');
-
     const gameState = {
       level: 0,
       stage: 0,
@@ -135,44 +125,34 @@
       solved: false,
       inventory: [],
     };
-
-    const intro = `Welcome to the 404 Escape Console.\nType 'help' for assistance.`;
-
+    const intro = `Welcome to the 404 Escape Console.\nUse the buttons to interact.`;
     const commands = {
-      help: () => `Commands:\n- help\n- look\n- inspect\n- password [text]\n- code [####]\n- enter\n- inventory\n- pickup [item]\n- use [item]\n- clear`,
-
       look: () => {
         if (gameState.level === 0) return "You're in a neon-lit room. There's a table, a wall, and an odd hum in the air.";
         if (gameState.level === 1) return "You're in a corridor with a keypad panel. The lights flicker ominously.";
         if (gameState.level === 2) return "You're in a puzzle room with gears clicking. A panel reads: 12, 19, 28, 39, ?";
       },
-
       inspect: () => {
         if (gameState.level === 0) return `The wall says: 'Speak the phrase that opens the gate.'\nThe table has a dusty scroll etched with the word 'sesame'.\nA brass tag nearby whispers: 'say it aloud to proceed.'`;
         if (gameState.level === 1) return `The keypad awaits a 4-digit code. You sense the number 9271 is important.`;
         if (gameState.level === 2) return `The sequence seems to increase oddly: 12, 19, 28, 39, ?. Use 'solve [number]'`;
       },
-
       clear: () => { output.innerText = ''; return ''; },
-
       password: (args) => {
-        if (!args[0]) return 'Enter a password: password [text]';
         if (args.join(' ') === gameState.password) {
           gameState.doorOpened = true;
           return 'Access granted. A hidden doorway slides open. Use "enter".';
         }
         return 'Access denied.';
       },
-
       code: (args) => {
-        if (!args[0] || gameState.level !== 1) return 'There is no code interface here.';
+        if (gameState.level !== 1) return 'There is no code interface here.';
         if (args[0] === gameState.code) {
           gameState.level2Unlocked = true;
           return 'Code accepted. A new door opens. Use "enter".';
         }
         return 'Incorrect code.';
       },
-
       solve: (args) => {
         if (gameState.level !== 2) return 'Nothing to solve here.';
         if (args[0] === '52') {
@@ -181,7 +161,6 @@
         }
         return 'Incorrect answer.';
       },
-
       enter: () => {
         if (gameState.level === 0 && gameState.doorOpened) {
           gameState.level = 1;
@@ -193,41 +172,29 @@
         }
         return 'No accessible path here.';
       },
-
       inventory: () => gameState.inventory.length ? `Inventory: ${gameState.inventory.join(', ')}` : 'Your inventory is empty.',
-
       pickup: (args) => {
         const item = args.join(' ');
-        if (item && !gameState.inventory.includes(item)) {
+        if (!gameState.inventory.includes(item)) {
           gameState.inventory.push(item);
           return `Picked up: ${item}`;
         }
-        return 'Nothing to pick up or already in inventory.';
+        return 'Item already picked up or not available.';
       },
-
       use: (args) => {
         const item = args.join(' ');
-        if (!gameState.inventory.includes(item)) return `You don’t have a ${item}.`;
+        if (!gameState.inventory.includes(item)) return `You don't have ${item}.`;
         if (item === 'map') return 'The map shows a winding route. A shortcut blinks at level 1.';
         return `You used ${item}, but nothing happened.`;
       }
     };
-
     function runCommand(raw) {
       const [cmd, ...args] = raw.trim().split(' ');
       const fn = commands[cmd];
       const res = fn ? fn(args) : `Unknown command: ${cmd}`;
       if (res !== '') output.innerText += `> ${raw}\n${res}\n\n`;
+      output.scrollTop = output.scrollHeight;
     }
-
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        runCommand(input.value);
-        input.value = '';
-        output.scrollTop = output.scrollHeight;
-      }
-    });
-
     output.innerText = intro;
   </script>
 </body>
