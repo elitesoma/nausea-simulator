@@ -4,39 +4,75 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let angle = 0;
+let scale = 1;
+let lastFrameTime = 0;
 
 function randomColor() {
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 256);
-  const b = Math.floor(Math.random() * 256);
-  return `rgb(${r},${g},${b})`;
+  return `rgb(${Math.random()*255}, ${Math.random()*255}, ${Math.random()*255})`;
 }
 
-function drawSpiral() {
-  ctx.save();
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  ctx.rotate(angle);
-  for (let i = 0; i < 360; i += 5) {
-    const x = Math.cos(i * Math.PI / 180) * i;
-    const y = Math.sin(i * Math.PI / 180) * i;
+function drawSpiralPattern(cx, cy, maxRadius, spacing) {
+  for (let i = 0; i < maxRadius; i += spacing) {
+    const x = cx + i * Math.cos(i);
+    const y = cy + i * Math.sin(i);
     ctx.beginPath();
-    ctx.arc(x, y, 5, 0, 2 * Math.PI);
-    ctx.fillStyle = `rgba(255, 255, 255, 0.1)`;
+    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+    ctx.fillStyle = `rgba(255,255,255,0.1)`;
     ctx.fill();
   }
-  ctx.restore();
 }
 
-function flickerFrame() {
-  ctx.fillStyle = randomColor();
+function drawMoiréEffect() {
+  const spacing = 12;
+  for (let i = 0; i < canvas.height; i += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(canvas.width, i);
+    ctx.strokeStyle = `rgba(255, 255, 255, 0.03)`;
+    ctx.stroke();
+  }
+}
+
+function drawRGBOverlay() {
+  ctx.fillStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.1)`;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function draw() {
-  flickerFrame();
-  drawSpiral();
-  angle += Math.random() * 0.2;
+function draw(timestamp) {
+  const elapsed = timestamp - lastFrameTime;
+  lastFrameTime = timestamp;
+
+  // Simulate FPS drop
+  if (Math.random() < 0.05) {
+    setTimeout(() => requestAnimationFrame(draw), Math.random() * 200);
+    return;
+  }
+
+  ctx.save();
+
+  // Rotate canvas
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(angle);
+  ctx.scale(scale, scale);
+  ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+  // Background flicker
+  ctx.fillStyle = randomColor();
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Visual chaos
+  drawSpiralPattern(canvas.width / 2, canvas.height / 2, 1000, 7);
+  drawMoiréEffect();
+  drawRGBOverlay();
+
+  ctx.restore();
+
+  // Jitter scale + rotation
+  angle += Math.random() * 0.02;
+  scale = 1 + Math.sin(timestamp / 200) * 0.03;
+
   requestAnimationFrame(draw);
 }
 
-draw();
+requestAnimationFrame(draw);
+
