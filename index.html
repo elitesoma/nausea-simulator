@@ -1,3 +1,4 @@
+// Expanded version of the 404 Escape Game with Level 2
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,6 +61,7 @@
       margin-top: 1rem;
       text-align: left;
       min-height: 100px;
+      white-space: pre-wrap;
     }
     .hidden {
       display: none;
@@ -84,6 +86,12 @@
     const gameState = {
       stage: 0,
       password: 'open-sesame',
+      hasMap: false,
+      inventory: [],
+      doorOpened: false,
+      level: 0,
+      level2Code: '9271',
+      level2Unlocked: false
     };
 
     const introText = `
@@ -92,25 +100,111 @@ Type 'help' to see available commands.
 `;
 
     const commands = {
-      help: `Available commands: help, look, inspect, password, clear` ,
-      look: `You see a wall with strange writing... maybe inspect it?`,
-      inspect: `The writing says: 'To escape, you must speak the words... a secret phrase.'`,
-      clear: () => { output.innerText = ''; return ''; },
+      help: `Available commands:\n- help\n- look\n- inspect\n- password [guess]\n- enter\n- clear\n- inventory\n- pickup [item]\n- use [item]\n- map\n- level\n- code [4-digit]\n- solve`,
+
+      look: () => {
+        if (gameState.level === 0) {
+          return `You are in a dimly lit room. There's a wall with writing, and a table with an object.`;
+        } else if (gameState.level === 1) {
+          return `The hallway has dim lights flickering. A keypad glows faintly on the far wall.`;
+        } else if (gameState.level === 2) {
+          return `You step into a mechanical room filled with gears. There's a control panel labeled 'Solve the sequence'.`;
+        }
+      },
+
+      inspect: () => {
+        if (gameState.level === 0) {
+          return `The wall says: 'Speak the phrase that opens the gate.'\nThere's a faint outline of a hidden door.`;
+        } else if (gameState.level === 1) {
+          return `The keypad has 4 digits. It looks like it needs a code. Maybe try 'code 1234'.`;
+        } else if (gameState.level === 2) {
+          return `The panel displays: '12, 19, 28, 39, ?' It expects a numeric answer. Use 'solve 52' or similar.`;
+        }
+      },
+
+      clear: () => {
+        output.innerText = ''; return '';
+      },
+
       password: (args) => {
         if (!args[0]) return 'You must type a password: password [your-guess]';
         if (args[0] === gameState.password) {
           gameState.stage = 1;
-          return 'Correct password. A door appears on the wall. Type "enter" to go through.';
+          gameState.doorOpened = true;
+          return 'Correct password. A door creaks open. Type "enter" to proceed.';
         } else {
           return 'Incorrect password.';
         }
       },
+
       enter: () => {
         if (gameState.stage === 1) {
-          return 'You walk through the door... You are free. Escape complete.';
-        } else {
-          return 'There is no door here yet.';
+          gameState.level = 1;
+          gameState.stage = 2;
+          return `Level 1 - The Hallway\nYou step into a narrow corridor. It’s eerily quiet. There’s a keypad on the wall.`;
+        } else if (gameState.level2Unlocked && gameState.level === 1) {
+          gameState.level = 2;
+          return `Level 2 - Mechanical Room\nYou enter a noisy room full of gears and levers. You spot a locked panel. Try 'inspect'.`;
         }
+        return 'There is nowhere to enter right now.';
+      },
+
+      code: (args) => {
+        if (gameState.level !== 1) return 'There is no keypad here.';
+        if (args[0] === gameState.level2Code) {
+          gameState.level2Unlocked = true;
+          return 'Code accepted. Another door slides open. Type "enter" to proceed.';
+        }
+        return 'Incorrect code. Try again.';
+      },
+
+      solve: (args) => {
+        if (gameState.level !== 2) return 'There is no puzzle to solve here.';
+        if (args[0] === '52') {
+          return 'Correct! The machine unlocks a path forward. To be continued...';
+        }
+        return 'Incorrect. Think harder about the sequence.';
+      },
+
+      inventory: () => {
+        if (gameState.inventory.length === 0) return 'Your inventory is empty.';
+        return 'Inventory: ' + gameState.inventory.join(', ');
+      },
+
+      pickup: (args) => {
+        const item = args.join(' ');
+        if (!args[0]) return 'Specify what to pick up: pickup [item]';
+        if (item === 'map' && !gameState.hasMap) {
+          gameState.inventory.push('map');
+          gameState.hasMap = true;
+          return 'You picked up the map. It might be useful.';
+        } else if (gameState.inventory.includes(item)) {
+          return 'You already picked that up.';
+        } else {
+          return 'There is no ' + item + ' to pick up.';
+        }
+      },
+
+      use: (args) => {
+        const item = args.join(' ');
+        if (!gameState.inventory.includes(item)) {
+          return `You don't have ${item} in your inventory.`;
+        }
+        if (item === 'map') {
+          return `The map shows a path to a locked chamber beyond the keypad.`;
+        }
+        return `You try to use the ${item}, but nothing happens.`;
+      },
+
+      map: () => {
+        if (gameState.hasMap) {
+          return `MAP:\n[Start] --> Hallway --> Mechanical Room --> ???`;
+        }
+        return 'You don’t have a map.';
+      },
+
+      level: () => {
+        return `Current level: ${gameState.level}`;
       },
     };
 
