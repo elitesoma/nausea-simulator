@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hoodie's Clicker</title>
+<title>Hoodie's Dungeon Clicker - Advanced</title>
 <style>
   body {
     background: #121212;
@@ -15,42 +15,70 @@
     user-select: none;
   }
   h1 {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
   }
   #score {
-    font-size: 2.5rem;
-    margin: 20px 0;
+    font-size: 3rem;
+    margin: 15px 0 5px 0;
+  }
+  #rebirth-info {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #ff9800;
   }
   #clicker-btn {
-    background: #ff5722;
+    background: linear-gradient(45deg, #ff5722, #ff7043);
     border: none;
-    border-radius: 12px;
-    width: 200px;
-    height: 200px;
-    font-size: 2.5rem;
+    border-radius: 15px;
+    width: 220px;
+    height: 220px;
+    font-size: 3rem;
     color: white;
     cursor: pointer;
-    box-shadow: 0 5px 15px rgba(255,87,34,0.7);
+    box-shadow: 0 8px 20px rgba(255,87,34,0.8);
     transition: transform 0.1s ease;
+    position: relative;
+    overflow: hidden;
   }
   #clicker-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.92);
+  }
+  #clicker-btn .click-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.7);
+    animation: clickfade 0.5s ease forwards;
+    pointer-events: none;
+    z-index: 10;
+  }
+  @keyframes clickfade {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(3);
+      opacity: 0;
+    }
   }
   #upgrades {
     margin-top: 30px;
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 25px;
     flex-wrap: wrap;
   }
   .upgrade {
     background: #222;
-    border-radius: 10px;
-    width: 140px;
-    padding: 15px;
+    border-radius: 15px;
+    width: 160px;
+    padding: 20px 15px;
     cursor: pointer;
-    box-shadow: 0 0 8px #ff5722;
+    box-shadow: 0 0 10px #ff5722;
     transition: background-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .upgrade:disabled {
     cursor: not-allowed;
@@ -58,12 +86,37 @@
     box-shadow: none;
   }
   .upgrade h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.2rem;
+    margin: 0 0 12px 0;
+    font-size: 1.3rem;
   }
   .upgrade p {
     margin: 5px 0;
+    font-size: 1rem;
+  }
+  #rebirth-btn {
+    margin-top: 40px;
+    background: #ff9800;
+    border: none;
+    border-radius: 12px;
+    padding: 15px 40px;
+    font-size: 1.3rem;
+    color: #121212;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(255,152,0,0.8);
+    transition: background-color 0.3s ease;
+  }
+  #rebirth-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+  }
+  #rebirth-btn:hover:not(:disabled) {
+    background: #ffa726;
+  }
+  footer {
+    margin-top: 50px;
     font-size: 0.9rem;
+    color: #666;
   }
 </style>
 </head>
@@ -71,92 +124,112 @@
 
 <h1>Hoodie's Dungeon Clicker</h1>
 <div id="score">0</div>
+<div id="rebirth-info">Rebirths: 0 | Multiplier: x1.0</div>
 <button id="clicker-btn">Click Me!</button>
 
-<div id="upgrades">
-  <!-- Upgrade buttons inserted here by JS -->
-</div>
+<div id="upgrades"></div>
+
+<button id="rebirth-btn" disabled>Rebirth (Reset for multiplier)</button>
+
+<footer>Made by You | Add your own images & titles!</footer>
 
 <script>
   // Game state
   let score = 0;
   let pointsPerClick = 1;
   let pointsPerSecond = 0;
+  let rebirths = 0;
+  let multiplier = 1;
 
-  // Upgrade data (add your own titles & images later)
+  // Upgrades data
   const upgrades = [
     {
-      id: 'upgrade1',
-      name: 'Upgrade 1',
+      id: 'click-up-1',
+      name: 'Click Upgrade I',
       description: 'Increase points per click by 1',
+      baseCost: 10,
       cost: 10,
       quantity: 0,
       effect: () => { pointsPerClick += 1; },
     },
     {
-      id: 'upgrade2',
-      name: 'Upgrade 2',
-      description: 'Increase points per click by 5',
-      cost: 100,
+      id: 'click-up-2',
+      name: 'Click Upgrade II',
+      description: 'Increase points per click by 10',
+      baseCost: 150,
+      cost: 150,
       quantity: 0,
-      effect: () => { pointsPerClick += 5; },
+      effect: () => { pointsPerClick += 10; },
     },
     {
-      id: 'auto1',
-      name: 'Auto Clicker',
+      id: 'auto-up-1',
+      name: 'Auto Clicker I',
       description: 'Earn 1 point per second automatically',
+      baseCost: 50,
       cost: 50,
       quantity: 0,
       effect: () => { pointsPerSecond += 1; },
     },
     {
-      id: 'auto2',
-      name: 'Super Auto Clicker',
-      description: 'Earn 5 points per second automatically',
-      cost: 500,
+      id: 'auto-up-2',
+      name: 'Auto Clicker II',
+      description: 'Earn 10 points per second automatically',
+      baseCost: 1000,
+      cost: 1000,
       quantity: 0,
-      effect: () => { pointsPerSecond += 5; },
+      effect: () => { pointsPerSecond += 10; },
     }
   ];
 
+  // DOM elements
   const scoreEl = document.getElementById('score');
+  const rebirthInfoEl = document.getElementById('rebirth-info');
   const clickerBtn = document.getElementById('clicker-btn');
   const upgradesDiv = document.getElementById('upgrades');
+  const rebirthBtn = document.getElementById('rebirth-btn');
 
-  // Load saved data
+  // Save/load functions
   function loadGame() {
-    const saved = localStorage.getItem('clickerGame');
+    const saved = localStorage.getItem('clickerGameAdvanced');
     if (saved) {
       const data = JSON.parse(saved);
       score = data.score || 0;
       pointsPerClick = data.pointsPerClick || 1;
       pointsPerSecond = data.pointsPerSecond || 0;
+      rebirths = data.rebirths || 0;
+      multiplier = 1 + rebirths * 0.5;
       upgrades.forEach(u => {
         const savedUpgrade = data.upgrades.find(su => su.id === u.id);
         if (savedUpgrade) {
           u.quantity = savedUpgrade.quantity;
+          // recalc effect based on quantity
+          for(let i=0; i<u.quantity; i++) u.effect();
+          u.cost = Math.floor(u.baseCost * Math.pow(1.6, u.quantity));
+        } else {
+          u.cost = u.baseCost;
+          u.quantity = 0;
         }
       });
     }
   }
 
-  // Save game state
   function saveGame() {
     const data = {
       score,
       pointsPerClick,
       pointsPerSecond,
-      upgrades: upgrades.map(u => ({ id: u.id, quantity: u.quantity }))
+      rebirths,
+      upgrades: upgrades.map(u => ({ id: u.id, quantity: u.quantity })),
     };
-    localStorage.setItem('clickerGame', JSON.stringify(data));
+    localStorage.setItem('clickerGameAdvanced', JSON.stringify(data));
   }
 
-  // Update score display
+  // Update UI
   function updateScore() {
-    scoreEl.textContent = score.toLocaleString();
+    scoreEl.textContent = Math.floor(score * multiplier).toLocaleString();
+    rebirthInfoEl.textContent = `Rebirths: ${rebirths} | Multiplier: x${multiplier.toFixed(2)}`;
   }
 
-  // Create upgrade buttons
   function createUpgradeButtons() {
     upgradesDiv.innerHTML = '';
     upgrades.forEach(upgrade => {
@@ -166,6 +239,7 @@
       btn.title = upgrade.description;
       btn.innerHTML = `
         <h3>${upgrade.name}</h3>
+        <p>${upgrade.description}</p>
         <p>Cost: <span class="cost">${upgrade.cost.toLocaleString()}</span></p>
         <p>Owned: <span class="quantity">${upgrade.quantity}</span></p>
       `;
@@ -174,7 +248,6 @@
     });
   }
 
-  // Update upgrade buttons (cost, disabled state, quantity)
   function updateUpgradesUI() {
     upgrades.forEach(upgrade => {
       const btn = document.getElementById(upgrade.id);
@@ -185,43 +258,86 @@
     });
   }
 
-  // Buy an upgrade
+  // Buy upgrades
   function buyUpgrade(upgrade) {
     if (score >= upgrade.cost) {
       score -= upgrade.cost;
-      upgrade.quantity += 1;
+      upgrade.quantity++;
       upgrade.effect();
-      // Increase cost for next purchase (simple exponential growth)
-      upgrade.cost = Math.floor(upgrade.cost * 1.5);
+      upgrade.cost = Math.floor(upgrade.baseCost * Math.pow(1.6, upgrade.quantity));
       updateScore();
       updateUpgradesUI();
+      updateRebirthButton();
       saveGame();
     }
   }
 
-  // Handle click button press
-  clickerBtn.addEventListener('click', () => {
+  // Handle clicking main button
+  clickerBtn.addEventListener('click', e => {
+    // Click animation effect
+    const rect = clickerBtn.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const effect = document.createElement('span');
+    effect.className = 'click-effect';
+    effect.style.left = `${x}px`;
+    effect.style.top = `${y}px`;
+    clickerBtn.appendChild(effect);
+    setTimeout(() => effect.remove(), 500);
+
     score += pointsPerClick;
     updateScore();
     updateUpgradesUI();
+    updateRebirthButton();
     saveGame();
   });
 
-  // Passive points per second
+  // Passive income
   setInterval(() => {
     if (pointsPerSecond > 0) {
       score += pointsPerSecond;
       updateScore();
       updateUpgradesUI();
+      updateRebirthButton();
       saveGame();
     }
   }, 1000);
 
-  // Init game
+  // Rebirth mechanic
+  function updateRebirthButton() {
+    // Enable rebirth at 1,000,000 points or more
+    if (score >= 1_000_000) {
+      rebirthBtn.disabled = false;
+    } else {
+      rebirthBtn.disabled = true;
+    }
+  }
+
+  rebirthBtn.addEventListener('click', () => {
+    if (score >= 1_000_000) {
+      rebirths++;
+      multiplier = 1 + rebirths * 0.5;
+      score = 0;
+      pointsPerClick = 1;
+      pointsPerSecond = 0;
+      upgrades.forEach(u => {
+        u.quantity = 0;
+        u.cost = u.baseCost;
+      });
+      updateScore();
+      updateUpgradesUI();
+      updateRebirthButton();
+      saveGame();
+      alert(`You rebirthed! Multiplier increased to x${multiplier.toFixed(2)}!`);
+    }
+  });
+
+  // Initialize
   loadGame();
   updateScore();
   createUpgradeButtons();
   updateUpgradesUI();
+  updateRebirthButton();
 </script>
 
 </body>
