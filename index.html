@@ -1,10 +1,10 @@
-// Expanded version of the 404 Escape Game with Level 2
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>404 Not Found</title>
+  <title>404 Escape Console</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -12,57 +12,98 @@
       box-sizing: border-box;
     }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #0b0c10;
-      color: #66fcf1;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
+      color: #00ffe0;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      text-align: center;
+      overflow: hidden;
+      animation: fadeIn 2s ease-in;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     h1 {
-      font-size: 6rem;
-      color: #ff105f;
+      font-size: 5rem;
+      color: #ff004c;
+      animation: glow 2s infinite alternate;
     }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #ff004c; }
+      to { text-shadow: 0 0 20px #ff004c, 0 0 30px #ff004c; }
+    }
+
     p {
       font-size: 1.2rem;
       max-width: 600px;
       margin-top: 1rem;
+      color: #ddd;
     }
+
     .console {
-      background-color: #1f2833;
-      border-radius: 10px;
+      background-color: #111;
+      border: 2px solid #00ffe0;
+      border-radius: 12px;
       padding: 2rem;
       margin-top: 2rem;
       width: 80%;
-      max-width: 600px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+      max-width: 700px;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+      animation: fadeInConsole 1.5s ease-out;
     }
+
+    @keyframes fadeInConsole {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
     .input-line {
       display: flex;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
     }
+
     .input-line span {
-      color: #45a29e;
+      color: #00ffe0;
       margin-right: 0.5rem;
+      font-weight: bold;
     }
+
     input {
       flex-grow: 1;
-      background-color: #0b0c10;
-      color: #66fcf1;
+      background-color: transparent;
+      color: #00ffe0;
       border: none;
-      border-bottom: 1px solid #66fcf1;
-      font-size: 1rem;
+      border-bottom: 2px solid #00ffe0;
+      font-size: 1.1rem;
       outline: none;
+      caret-color: #00ffe0;
+      transition: all 0.3s ease;
     }
+
+    input:focus {
+      border-color: #ff004c;
+    }
+
     #output {
       margin-top: 1rem;
       text-align: left;
-      min-height: 100px;
+      min-height: 200px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 10px;
       white-space: pre-wrap;
+      font-size: 1rem;
+      color: #00ffee;
+      animation: fadeIn 1.2s ease-in-out;
     }
+
     .hidden {
       display: none;
     }
@@ -70,7 +111,8 @@
 </head>
 <body>
   <h1>404</h1>
-  <p>This page doesn’t exist... or does it?</p>
+  <p>You've entered the void. There's a way out... if you can find it.</p>
+
   <div class="console">
     <div id="output"></div>
     <div class="input-line">
@@ -84,141 +126,101 @@
     const input = document.getElementById('userInput');
 
     const gameState = {
-      stage: 0,
-      password: 'open-sesame',
-      hasMap: false,
-      inventory: [],
-      doorOpened: false,
       level: 0,
-      level2Code: '9271',
-      level2Unlocked: false
+      stage: 0,
+      doorOpened: false,
+      level2Unlocked: false,
+      password: 'open-sesame',
+      code: '9271',
+      solved: false,
+      inventory: [],
     };
 
-    const introText = `
-Welcome to the hidden console.
-Type 'help' to see available commands.
-`;
+    const intro = `Welcome to the 404 Escape Console.\nType 'help' for assistance.`;
 
     const commands = {
-      help: `Available commands:\n- help\n- look\n- inspect\n- password [guess]\n- enter\n- clear\n- inventory\n- pickup [item]\n- use [item]\n- map\n- level\n- code [4-digit]\n- solve`,
+      help: () => `Commands:\n- help\n- look\n- inspect\n- password [text]\n- code [####]\n- enter\n- inventory\n- pickup [item]\n- use [item]\n- clear`,
 
       look: () => {
-        if (gameState.level === 0) {
-          return `You are in a dimly lit room. There's a wall with writing, and a table with an object.`;
-        } else if (gameState.level === 1) {
-          return `The hallway has dim lights flickering. A keypad glows faintly on the far wall.`;
-        } else if (gameState.level === 2) {
-          return `You step into a mechanical room filled with gears. There's a control panel labeled 'Solve the sequence'.`;
-        }
+        if (gameState.level === 0) return "You're in a neon-lit room. There's a table, a wall, and an odd hum in the air.";
+        if (gameState.level === 1) return "You're in a corridor with a keypad panel. The lights flicker ominously.";
+        if (gameState.level === 2) return "You're in a puzzle room with gears clicking. A panel reads: 12, 19, 28, 39, ?";
       },
 
       inspect: () => {
-        if (gameState.level === 0) {
-          return `The wall says: 'Speak the phrase that opens the gate.'\nThere's a faint outline of a hidden door.`;
-        } else if (gameState.level === 1) {
-          return `The keypad has 4 digits. It looks like it needs a code. Maybe try 'code 1234'.`;
-        } else if (gameState.level === 2) {
-          return `The panel displays: '12, 19, 28, 39, ?' It expects a numeric answer. Use 'solve 52' or similar.`;
-        }
+        if (gameState.level === 0) return `The wall says: 'Speak the phrase that opens the gate.'\nThe table has a dusty scroll etched with the word 'sesame'.\nA brass tag nearby whispers: 'say it aloud to proceed.'`;
+        if (gameState.level === 1) return `The keypad awaits a 4-digit code. You sense the number 9271 is important.`;
+        if (gameState.level === 2) return `The sequence seems to increase oddly: 12, 19, 28, 39, ?. Use 'solve [number]'`;
       },
 
-      clear: () => {
-        output.innerText = ''; return '';
-      },
+      clear: () => { output.innerText = ''; return ''; },
 
       password: (args) => {
-        if (!args[0]) return 'You must type a password: password [your-guess]';
-        if (args[0] === gameState.password) {
-          gameState.stage = 1;
+        if (!args[0]) return 'Enter a password: password [text]';
+        if (args.join(' ') === gameState.password) {
           gameState.doorOpened = true;
-          return 'Correct password. A door creaks open. Type "enter" to proceed.';
-        } else {
-          return 'Incorrect password.';
+          return 'Access granted. A hidden doorway slides open. Use "enter".';
         }
-      },
-
-      enter: () => {
-        if (gameState.stage === 1) {
-          gameState.level = 1;
-          gameState.stage = 2;
-          return `Level 1 - The Hallway\nYou step into a narrow corridor. It’s eerily quiet. There’s a keypad on the wall.`;
-        } else if (gameState.level2Unlocked && gameState.level === 1) {
-          gameState.level = 2;
-          return `Level 2 - Mechanical Room\nYou enter a noisy room full of gears and levers. You spot a locked panel. Try 'inspect'.`;
-        }
-        return 'There is nowhere to enter right now.';
+        return 'Access denied.';
       },
 
       code: (args) => {
-        if (gameState.level !== 1) return 'There is no keypad here.';
-        if (args[0] === gameState.level2Code) {
+        if (!args[0] || gameState.level !== 1) return 'There is no code interface here.';
+        if (args[0] === gameState.code) {
           gameState.level2Unlocked = true;
-          return 'Code accepted. Another door slides open. Type "enter" to proceed.';
+          return 'Code accepted. A new door opens. Use "enter".';
         }
-        return 'Incorrect code. Try again.';
+        return 'Incorrect code.';
       },
 
       solve: (args) => {
-        if (gameState.level !== 2) return 'There is no puzzle to solve here.';
+        if (gameState.level !== 2) return 'Nothing to solve here.';
         if (args[0] === '52') {
-          return 'Correct! The machine unlocks a path forward. To be continued...';
+          gameState.solved = true;
+          return 'Correct! A final path unlocks. You feel air... You are free. The end.';
         }
-        return 'Incorrect. Think harder about the sequence.';
+        return 'Incorrect answer.';
       },
 
-      inventory: () => {
-        if (gameState.inventory.length === 0) return 'Your inventory is empty.';
-        return 'Inventory: ' + gameState.inventory.join(', ');
+      enter: () => {
+        if (gameState.level === 0 && gameState.doorOpened) {
+          gameState.level = 1;
+          return 'Level 1: Corridor — You step forward. The keypad waits.';
+        }
+        if (gameState.level === 1 && gameState.level2Unlocked) {
+          gameState.level = 2;
+          return 'Level 2: Puzzle Room — Gears turn as you enter.';
+        }
+        return 'No accessible path here.';
       },
+
+      inventory: () => gameState.inventory.length ? `Inventory: ${gameState.inventory.join(', ')}` : 'Your inventory is empty.',
 
       pickup: (args) => {
         const item = args.join(' ');
-        if (!args[0]) return 'Specify what to pick up: pickup [item]';
-        if (item === 'map' && !gameState.hasMap) {
-          gameState.inventory.push('map');
-          gameState.hasMap = true;
-          return 'You picked up the map. It might be useful.';
-        } else if (gameState.inventory.includes(item)) {
-          return 'You already picked that up.';
-        } else {
-          return 'There is no ' + item + ' to pick up.';
+        if (item && !gameState.inventory.includes(item)) {
+          gameState.inventory.push(item);
+          return `Picked up: ${item}`;
         }
+        return 'Nothing to pick up or already in inventory.';
       },
 
       use: (args) => {
         const item = args.join(' ');
-        if (!gameState.inventory.includes(item)) {
-          return `You don't have ${item} in your inventory.`;
-        }
-        if (item === 'map') {
-          return `The map shows a path to a locked chamber beyond the keypad.`;
-        }
-        return `You try to use the ${item}, but nothing happens.`;
-      },
-
-      map: () => {
-        if (gameState.hasMap) {
-          return `MAP:\n[Start] --> Hallway --> Mechanical Room --> ???`;
-        }
-        return 'You don’t have a map.';
-      },
-
-      level: () => {
-        return `Current level: ${gameState.level}`;
-      },
+        if (!gameState.inventory.includes(item)) return `You don’t have a ${item}.`;
+        if (item === 'map') return 'The map shows a winding route. A shortcut blinks at level 1.';
+        return `You used ${item}, but nothing happened.`;
+      }
     };
 
-    function runCommand(inputStr) {
-      const [cmd, ...args] = inputStr.trim().split(' ');
-      if (commands[cmd]) {
-        const result = typeof commands[cmd] === 'function' ? commands[cmd](args) : commands[cmd];
-        if (result !== '') output.innerText += `> ${inputStr}\n${result}\n\n`;
-      } else {
-        output.innerText += `> ${inputStr}\nUnknown command. Type 'help'.\n\n`;
-      }
+    function runCommand(raw) {
+      const [cmd, ...args] = raw.trim().split(' ');
+      const fn = commands[cmd];
+      const res = fn ? fn(args) : `Unknown command: ${cmd}`;
+      if (res !== '') output.innerText += `> ${raw}\n${res}\n\n`;
     }
 
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         runCommand(input.value);
         input.value = '';
@@ -226,7 +228,7 @@ Type 'help' to see available commands.
       }
     });
 
-    output.innerText = introText;
+    output.innerText = intro;
   </script>
 </body>
 </html>
