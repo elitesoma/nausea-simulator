@@ -1,16 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Nausea Simulator</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>THE STATIC - Horror Game</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    #overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Courier New', monospace;
+      font-size: 3vw;
+      color: red;
+      text-shadow: 0 0 10px red;
+      animation: flicker 0.15s infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes flicker {
+      0% { opacity: 0.2; }
+      100% { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
-  <canvas id="nauseaCanvas"></canvas>
-  <div id="overlayText">⚠ WARNING ⚠</div>
-  <audio id="distortionAudio" autoplay loop>
-    <source src="warning.mp3" type="audio/mp3" />
-  </audio>
-  <script src="script.js"></script>
+  <canvas id="gameCanvas"></canvas>
+  <div id="overlay">THE STATIC IS LISTENING...</div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let angle = 0;
+    let staticNoise = ctx.createImageData(canvas.width, canvas.height);
+
+    function generateStatic() {
+      for (let i = 0; i < staticNoise.data.length; i += 4) {
+        let gray = Math.random() * 255;
+        staticNoise.data[i] = gray;
+        staticNoise.data[i+1] = gray;
+        staticNoise.data[i+2] = gray;
+        staticNoise.data[i+3] = 255;
+      }
+      ctx.putImageData(staticNoise, 0, 0);
+    }
+
+    function drawDistortion() {
+      ctx.save();
+      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.rotate(angle);
+      ctx.scale(1 + Math.sin(Date.now()/500)*0.01, 1 + Math.sin(Date.now()/500)*0.01);
+      ctx.translate(-canvas.width/2, -canvas.height/2);
+
+      ctx.fillStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.05)`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      angle += 0.0005;
+      ctx.restore();
+    }
+
+    function loop() {
+      generateStatic();
+      drawDistortion();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
 </body>
 </html>
