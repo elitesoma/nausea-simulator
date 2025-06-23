@@ -11,21 +11,25 @@ canvas {
   height: 100vh;
 }
 
-#warning {
+#overlayText {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: Arial, sans-serif;
-  font-size: 4rem;
+  transform: translate(-50%, -50%) rotate(0deg);
+  font-size: 6vw;
   color: red;
-  font-weight: bold;
-  text-shadow: 0 0 20px black;
-  animation: flicker 0.15s infinite;
+  font-family: 'Impact', sans-serif;
+  text-shadow: 0 0 10px #fff, 0 0 20px #f00;
+  animation: flicker 0.15s infinite alternate, spin 6s linear infinite;
+  z-index: 10;
 }
 
 @keyframes flicker {
-  0% { opacity: 1; }
-  50% { opacity: 0; }
-  100% { opacity: 1; }
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
